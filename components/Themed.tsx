@@ -31,18 +31,13 @@ export function useThemeColor(
 }
 
 export function Text(props: TextProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
+  const { style, ...otherProps } = props;
 
-  return <DefaultText style={[style]} {...otherProps} />;
+  return <DefaultText style={[{ color: "white" }, style]} {...otherProps} />;
 }
 
 export function View(props: ViewProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
-  const backgroundColor = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    "background",
-  );
+  const { style, ...otherProps } = props;
 
-  return <DefaultView style={[, style]} {...otherProps} />;
+  return <DefaultView style={[style]} {...otherProps} />;
 }
