@@ -1,152 +1,120 @@
-import GuessItem from "@/components/GuessItem";
-import { View } from "@/components/Themed";
+import { Text } from "@/components/Themed";
 import Button from "@/components/ui/Button";
 import Colors from "@/constants/Colors";
-import { useEffect, useMemo, useState } from "react";
-import { FlatList, StyleSheet, TextInput } from "react-native";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Alert, StyleSheet, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const numberRegex = RegExp("^[0-9]+$");
+
 const StartScreen = () => {
-  const [currentGuess, setCurrentGuess] = useState(0);
-  const [guesses, setGuesses] = useState<
-    {
-      id: string;
-      guess: number;
-      created_at: number;
-      isMatch?: boolean;
-    }[]
-  >([]);
-  const [currentDisplay, setCurrentDisplay] = useState<
-    "warm" | "cold" | "match" | null
-  >(null);
-  const rando = useMemo(() => {
-    return +(Math.random() * 100).toFixed(0);
-  }, []);
+  const router = useRouter();
+  const [secretNumber, setSecretNumber] = useState("");
 
-  useEffect(() => {
-    console.log("rando ", rando);
-  }, []);
-
-  useEffect(() => {
-    console.log("guesses , ", guesses);
-  }, [guesses]);
-
-  const handleGuessChange = (num: string) => {
-    if (numberRegex.test(num)) {
-      setCurrentGuess(+num);
+  const handleStartGame = () => {
+    if (!secretNumber || !numberRegex.test(secretNumber)) {
+      Alert.alert(
+        "Invalid Number",
+        "Please enter a valid number between 0 and 99",
+      );
+      return;
     }
-    if (num == "") {
-      setCurrentGuess(0);
+
+    const num = parseInt(secretNumber);
+    if (num < 0 || num > 99) {
+      Alert.alert("Invalid Number", "Number must be between 0 and 99");
+      return;
     }
+
+    router.replace({
+      pathname: "/game",
+      params: { secretNumber: secretNumber },
+    });
   };
+
   return (
-    <View style={styles.outerContainer}>
-      <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Guess My Number</Text>
+      <Text style={styles.subtitle}>
+        Enter a secret number between 0 and 99
+      </Text>
+
+      <View style={styles.inputContainer}>
         <TextInput
-          value={currentGuess.toString()}
-          onChangeText={handleGuessChange}
+          value={secretNumber}
+          onChangeText={(text) => {
+            if (numberRegex.test(text) || text === "") {
+              setSecretNumber(text);
+            }
+          }}
           style={styles.input}
           maxLength={2}
           inputMode="numeric"
           keyboardType="number-pad"
+          placeholder="?"
+          placeholderTextColor="#ddb52f55"
         />
-        <View
-          style={{
-            flexDirection: "row",
-            flex: 1,
-            gap: 5,
-          }}
-        >
-          <Button
-            disabled={currentDisplay === "match"}
-            title="Reset"
-            onPress={() => setCurrentGuess(0)}
-          />
-          <Button
-            title="Confirm"
-            disabled={currentDisplay === "match"}
-            onPress={() => {
-              console.log("on click");
-              const tenBigger = rando + 10;
-              const tenSmaller = rando <= 10 ? 0 : rando - 10;
+      </View>
 
-              const id = new Date().getDate().toString(8);
-              const created_at = new Date().getDate();
-              const newObj = { id, created_at, guess: currentGuess };
-              if (+currentGuess == +rando) {
-                setCurrentDisplay("match");
-                setGuesses((prev) => [...prev, { ...newObj, isMatch: true }]);
-                return;
-              } else if (
-                tenBigger >= currentGuess &&
-                tenSmaller <= currentGuess
-              ) {
-                setCurrentDisplay("warm");
-              } else {
-                setCurrentDisplay("cold");
-              }
-              setGuesses((prev) => [...prev, { ...newObj }]);
-            }}
-          />
-        </View>
-      </View>
-      <View style={styles.container}>
-        <FlatList
-          keyExtractor={(item) => item.id}
-          data={guesses}
-          renderItem={({ item }) => (
-            <GuessItem guess={item.guess} id={item.id} isMatch={item.isMatch} />
-          )}
-        />
-      </View>
-    </View>
+      <Button
+        title="Start Game"
+        onPress={handleStartGame}
+        disabled={!secretNumber}
+      />
+
+      <Text style={styles.infoText}>
+        Your friend will try to guess this number
+      </Text>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
-    padding: 16,
-    marginTop: 100,
-    marginHorizontal: 24,
-    gap: 25,
-  },
   container: {
-    padding: 16,
-    minHeight: 180,
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#4e0329",
-    borderRadius: 10,
-    elevation: 6,
-    // for IOS users
-    shadowColor: "black",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowRadius: 6,
-    gap: 10,
+    gap: 24,
+    padding: 24,
   },
   title: {
-    fontSize: 20,
+    fontSize: 32,
     fontWeight: "bold",
+    color: Colors.accent,
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: "80%",
+  subtitle: {
+    fontSize: 16,
+    color: Colors.text.primary,
+    textAlign: "center",
+  },
+  inputContainer: {
+    width: "100%",
+    alignItems: "center",
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    padding: 20,
+    elevation: 4,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
   input: {
-    height: 62,
-    fontSize: 32,
-    width: "80%",
-    borderBottomColor: "#ddb52f",
-    color: "#ddb52f",
-    borderBottomWidth: 2,
-    marginVertical: 20,
-    paddingBlock: 10,
-    borderColor: Colors.light.border,
+    height: 80,
+    fontSize: 48,
+    width: "60%",
+    borderBottomColor: Colors.accent,
+    color: Colors.accent,
+    borderBottomWidth: 3,
+    paddingVertical: 10,
     textAlign: "center",
+    fontWeight: "bold",
+  },
+  infoText: {
+    color: Colors.text.muted,
+    fontSize: 14,
+    textAlign: "center",
+    fontStyle: "italic",
   },
 });
 

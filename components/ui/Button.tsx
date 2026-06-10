@@ -1,11 +1,12 @@
+import Colors from "@/constants/Colors";
 import {
   Pressable,
   StyleProp,
   StyleSheet,
-  Text,
   TextStyle,
   ViewStyle,
 } from "react-native";
+import { Text } from "@/components/Themed";
 
 interface ButtonProps {
   onPress?: () => void;
@@ -40,16 +41,15 @@ export default function Button({
 
 const styles = StyleSheet.create({
   button: {
-    flex: 1,
-    backgroundColor: "#72063c",
+    backgroundColor: Colors.primaryLight,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 28,
-    overflow: "hidden", // important for ripple clipping
+    overflow: "hidden",
     elevation: 2,
   },
   text: {
-    color: "#fff",
+    color: Colors.text.primary,
     textAlign: "center",
   },
 });
