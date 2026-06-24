@@ -1,11 +1,7 @@
 import { GameProvider } from "@/components/context/GameContext";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { ResponsiveProvider } from "@/theme/responsive";
 import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
@@ -23,7 +19,7 @@ import "react-native-reanimated";
 export { ErrorBoundary } from "expo-router";
 
 export const unstable_settings = {
-  initialRouteName: "(tabs)",
+  initialRouteName: "index",
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -64,7 +60,7 @@ function RootLayoutNav() {
 
   return (
     <GameProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <ResponsiveProvider>
         <LinearGradient
           style={{ flex: 1 }}
           colors={[Colors.gradientStart, Colors.accent]}
@@ -87,7 +83,7 @@ function RootLayoutNav() {
             </Stack>
           </ImageBackground>
         </LinearGradient>
-      </ThemeProvider>
+      </ResponsiveProvider>
     </GameProvider>
   );
 }

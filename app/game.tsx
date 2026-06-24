@@ -1,12 +1,13 @@
 import { useGame } from "@/components/context/GameContext";
 import { Text } from "@/components/Themed";
+import ScreenWrapper from "@/components/ui/ScreenWrapper";
 import Colors from "@/constants/Colors";
+import { useResponsive } from "@/theme/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { randomUUID } from "expo-crypto";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 type HintIcon = {
   name: keyof typeof Ionicons.glyphMap;
@@ -14,6 +15,7 @@ type HintIcon = {
 };
 
 const GameScreen = () => {
+  const { fontSize, spacing, bp } = useResponsive();
   const { currentGuesses, setCurrentGuesses, saveRound } = useGame();
   const { secretNumber } = useLocalSearchParams<{ secretNumber: string }>();
 
@@ -53,28 +55,19 @@ const GameScreen = () => {
     setCurrentDisplay(isWarm ? "warm" : "cold");
 
     if (isWarm) {
-      if (distance <= 2) {
-        return "Very Hot!";
-      } else if (distance <= 5) {
-        return "Hot!";
-      } else {
-        return "Getting Warm!";
-      }
+      if (distance <= 2) return "Very Hot!";
+      else if (distance <= 5) return "Hot!";
+      else return "Getting Warm!";
     } else {
-      if (distance <= 20) {
-        return "Cool";
-      } else if (distance <= 50) {
-        return "Cold";
-      } else {
-        return "Freezing!";
-      }
+      if (distance <= 20) return "Cool";
+      else if (distance <= 50) return "Cold";
+      else return "Freezing!";
     }
   };
 
   const handleGuessChange = (increment: number) => {
     const newGuess = currentGuess + increment;
 
-    // Prevent going outside bounds
     if (newGuess < 0 || newGuess > 99) {
       const message = newGuess < 0 ? "Can't go below 0!" : "Can't go above 99!";
       setHintMessage(message);
@@ -96,7 +89,6 @@ const GameScreen = () => {
       setHintMessage("MATCH! You found it!");
       const finalGuesses = [...currentGuesses, { ...newObj, isMatch: true }];
 
-      // Delay navigation to show success message
       setTimeout(() => {
         saveRound(finalGuesses);
         router.replace("/gameover");
@@ -106,10 +98,8 @@ const GameScreen = () => {
       return;
     }
 
-    // Get hint message
     const hint = checkProximity(newGuess);
     setHintMessage(hint);
-
     setCurrentGuesses([...currentGuesses, newObj]);
     setGameStarted(true);
   };
@@ -142,180 +132,244 @@ const GameScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.outerContainer}>
-        {/* header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Guess The Number</Text>
-          <Text style={styles.subtitle}>
-            Use +/- buttons to guess between 0-99
+    <ScreenWrapper >
+      {/* Header */}
+      <View style={[styles.header, { padding: spacing[1] }]}>
+        <Text style={[styles.title, { fontSize: fontSize["3xl"] }]}>
+          Guess The Number
+        </Text>
+        <Text style={[styles.subtitle, { fontSize: fontSize.sm }]}>
+          Use +/- buttons to guess between 0-99
+        </Text>
+      </View>
+
+      {/* Hint badge — warm or cold */}
+      {currentDisplay && currentDisplay !== "match" && (
+        <View
+          style={[
+            styles.hintBadge,
+            currentDisplay === "warm" ? styles.warm : styles.cold,
+            {
+              paddingVertical: spacing[3],
+              paddingHorizontal: spacing[5],
+              gap: spacing[2],
+              borderRadius: spacing[2],
+              minWidth: bp.isSm ? 160 : 200,
+            },
+          ]}
+        >
+          <Ionicons
+            name={getHintIcon().name}
+            size={20}
+            color={getHintIcon().color}
+          />
+          <Text style={[styles.hintText, { fontSize: fontSize.base }]}>
+            {hintMessage || "Start guessing!"}
+          </Text>
+        </View>
+      )}
+
+      {/* Match badge */}
+      {currentDisplay === "match" && (
+        <View
+          style={[
+            styles.hintBadge,
+            styles.match,
+            {
+              paddingVertical: spacing[3],
+              paddingHorizontal: spacing[5],
+              gap: spacing[2],
+              borderRadius: spacing[2],
+            },
+          ]}
+        >
+          <Ionicons name="trophy" size={20} color="#FFD700" />
+          <Text style={[styles.hintText, { fontSize: fontSize.base }]}>
+            MATCH! You win!
+          </Text>
+        </View>
+      )}
+
+      {/* Attempts counter */}
+      {attempts > 0 && (
+        <View style={[styles.attemptsContainer, { gap: spacing[2] }]}>
+          <Ionicons name="analytics" size={16} color={Colors.text.muted} />
+          <Text style={[styles.attemptsText, { fontSize: fontSize.sm }]}>
+            Attempt #{attempts}
+          </Text>
+        </View>
+      )}
+
+      {/* Main card */}
+      <View
+        style={[
+          styles.container,
+          {
+            padding: spacing[4],
+            gap: spacing[4],
+          },
+        ]}
+      >
+        {/* Guess count */}
+        <View style={[styles.guessCountContainer, { gap: spacing[1] }]}>
+          <Ionicons name="list" size={14} color={Colors.text.muted} />
+          <Text style={[styles.guessCount, { fontSize: fontSize.xs }]}>
+            {currentGuesses.length === 0
+              ? "Start guessing!"
+              : `${currentGuesses.length} guess${currentGuesses.length > 1 ? "es" : ""} so far`}
           </Text>
         </View>
 
-        {/* hint badge */}
-        {currentDisplay && currentDisplay !== "match" && (
-          <View
-            style={[
-              styles.hintBadge,
-              currentDisplay === "warm" ? styles.warm : styles.cold,
-            ]}
-          >
-            <Ionicons
-              name={getHintIcon().name}
-              size={20}
-              color={getHintIcon().color}
-            />
-            <Text style={styles.hintText}>
-              {hintMessage || "Start guessing!"}
-            </Text>
-          </View>
-        )}
+        {/* Current guess display */}
+        <View
+          style={[
+            styles.guessDisplay,
+            {
+              paddingHorizontal: spacing[10],
+              paddingVertical: spacing[5],
+            },
+          ]}
+        >
+          <Text style={[styles.guessNumber, { fontSize: fontSize["4xl"] }]}>
+            {currentGuess}
+          </Text>
+        </View>
 
-        {currentDisplay === "match" && (
-          <View style={[styles.hintBadge, styles.match]}>
-            <Ionicons name="trophy" size={20} color="#FFD700" />
-            <Text style={styles.hintText}>MATCH! You win!</Text>
-          </View>
-        )}
-
-        {/* Attempts counter */}
-        {attempts > 0 && (
-          <View style={styles.attemptsContainer}>
-            <Ionicons name="analytics" size={16} color={Colors.text.muted} />
-            <Text style={styles.attemptsText}>Attempt #{attempts}</Text>
-          </View>
-        )}
-
-        <View style={styles.container}>
-          <View style={styles.guessCountContainer}>
-            <Ionicons name="list" size={14} color={Colors.text.muted} />
-            <Text style={styles.guessCount}>
-              {currentGuesses.length === 0
-                ? "Start guessing!"
-                : `${currentGuesses.length} guess${currentGuesses.length > 1 ? "es" : ""} so far`}
-            </Text>
-          </View>
-
-          {/* Current guess display */}
-          <View style={styles.guessDisplay}>
-            <Text style={styles.guessNumber}>{currentGuess}</Text>
-          </View>
-
-          {/* Control buttons */}
-          <View style={styles.controlRow}>
-            <TouchableOpacity
-              style={[
-                styles.controlButton,
-                (!canGoLower || currentDisplay === "match") &&
-                  styles.disabledButton,
-              ]}
-              onPress={() => handleGuessChange(-1)}
-              disabled={!canGoLower || currentDisplay === "match"}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="remove" size={24} color="white" />
-              <Text style={styles.controlButtonText}>1</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.controlButton,
-                styles.mainButton,
-                (!canGoLower || currentDisplay === "match") &&
-                  styles.disabledButton,
-              ]}
-              onPress={() => handleGuessChange(-10)}
-              disabled={!canGoLower || currentDisplay === "match"}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="remove" size={24} color="white" />
-              <Text style={styles.controlButtonText}>10</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.controlButton,
-                styles.mainButton,
-                (!canGoHigher || currentDisplay === "match") &&
-                  styles.disabledButton,
-              ]}
-              onPress={() => handleGuessChange(10)}
-              disabled={!canGoHigher || currentDisplay === "match"}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="add" size={24} color="white" />
-              <Text style={styles.controlButtonText}>10</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.controlButton,
-                (!canGoHigher || currentDisplay === "match") &&
-                  styles.disabledButton,
-              ]}
-              onPress={() => handleGuessChange(1)}
-              disabled={!canGoHigher || currentDisplay === "match"}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="add" size={24} color="white" />
-              <Text style={styles.controlButtonText}>1</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Reset button */}
+        {/* Control buttons */}
+        <View style={[styles.controlRow, { gap: spacing[2] }]}>
           <TouchableOpacity
             style={[
-              styles.resetButton,
-              (!gameStarted || currentDisplay === "match") &&
+              styles.controlButton,
+              {
+                paddingVertical: spacing[3],
+                paddingHorizontal: spacing[4],
+                minWidth: bp.isSm ? 50 : 60,
+              },
+              (!canGoLower || currentDisplay === "match") &&
                 styles.disabledButton,
             ]}
-            onPress={handleReset}
-            disabled={!gameStarted || currentDisplay === "match"}
+            onPress={() => handleGuessChange(-1)}
+            disabled={!canGoLower || currentDisplay === "match"}
             activeOpacity={0.7}
           >
-            <Ionicons name="refresh" size={20} color="white" />
-            <Text style={styles.resetButtonText}>Reset Game</Text>
+            <Ionicons name="remove" size={24} color="white" />
+            <Text
+              style={[styles.controlButtonText, { fontSize: fontSize.base }]}
+            >
+              1
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.controlButton,
+              styles.mainButton,
+              { paddingVertical: spacing[3], paddingHorizontal: spacing[4] },
+              (!canGoLower || currentDisplay === "match") &&
+                styles.disabledButton,
+            ]}
+            onPress={() => handleGuessChange(-10)}
+            disabled={!canGoLower || currentDisplay === "match"}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="remove" size={24} color="white" />
+            <Text
+              style={[styles.controlButtonText, { fontSize: fontSize.base }]}
+            >
+              10
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.controlButton,
+              styles.mainButton,
+              { paddingVertical: spacing[3], paddingHorizontal: spacing[4] },
+              (!canGoHigher || currentDisplay === "match") &&
+                styles.disabledButton,
+            ]}
+            onPress={() => handleGuessChange(10)}
+            disabled={!canGoHigher || currentDisplay === "match"}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={24} color="white" />
+            <Text
+              style={[styles.controlButtonText, { fontSize: fontSize.base }]}
+            >
+              10
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.controlButton,
+              {
+                paddingVertical: spacing[3],
+                paddingHorizontal: spacing[4],
+                minWidth: bp.isSm ? 50 : 60,
+              },
+              (!canGoHigher || currentDisplay === "match") &&
+                styles.disabledButton,
+            ]}
+            onPress={() => handleGuessChange(1)}
+            disabled={!canGoHigher || currentDisplay === "match"}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={24} color="white" />
+            <Text
+              style={[styles.controlButtonText, { fontSize: fontSize.base }]}
+            >
+              1
+            </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Reset button */}
+        <TouchableOpacity
+          style={[
+            styles.resetButton,
+            {
+              paddingVertical: spacing[4],
+              marginTop: spacing[2],
+              gap: spacing[2],
+            },
+            (!gameStarted || currentDisplay === "match") &&
+              styles.disabledButton,
+          ]}
+          onPress={handleReset}
+          disabled={!gameStarted || currentDisplay === "match"}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="refresh" size={20} color="white" />
+          <Text style={[styles.resetButtonText, { fontSize: fontSize.base }]}>
+            Reset Game
+          </Text>
+        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "transparent",
-  },
   outerContainer: {
     flex: 1,
-    padding: 16,
-    gap: 16,
     backgroundColor: "transparent",
   },
   header: {
     alignItems: "center",
-    gap: 4,
   },
   title: {
-    fontSize: 28,
     fontWeight: "bold",
     color: Colors.accent,
   },
   subtitle: {
-    fontSize: 14,
     color: Colors.text.subtitle,
   },
   hintBadge: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 20,
     alignSelf: "center",
     alignItems: "center",
-    minWidth: 200,
     flexDirection: "row",
     justifyContent: "center",
-    gap: 8,
   },
   warm: {
     backgroundColor: Colors.warm.bg,
@@ -335,23 +389,19 @@ const styles = StyleSheet.create({
   hintText: {
     color: Colors.text.primary,
     fontWeight: "600",
-    fontSize: 16,
     textAlign: "center",
   },
   attemptsContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
   },
   attemptsText: {
     color: Colors.text.muted,
-    fontSize: 14,
     textAlign: "center",
     fontWeight: "500",
   },
   container: {
-    padding: 16,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: Colors.primary,
@@ -360,47 +410,36 @@ const styles = StyleSheet.create({
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
-    gap: 16,
   },
   guessCountContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
   },
   guessCount: {
     color: Colors.text.muted,
-    fontSize: 13,
   },
   guessDisplay: {
     backgroundColor: Colors.accent + "15",
     borderRadius: 20,
-    paddingHorizontal: 40,
-    paddingVertical: 20,
     borderWidth: 2,
     borderColor: Colors.accent,
     alignItems: "center",
   },
   guessNumber: {
-    fontSize: 48,
     fontWeight: "bold",
     color: Colors.accent,
   },
   controlRow: {
     flexDirection: "row",
     width: "100%",
-    gap: 8,
     justifyContent: "center",
   },
   controlButton: {
     backgroundColor: Colors.accent,
     borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minWidth: 60,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    gap: 2,
     elevation: 3,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
@@ -416,27 +455,25 @@ const styles = StyleSheet.create({
   },
   controlButtonText: {
     color: "white",
-    fontSize: 16,
     fontWeight: "bold",
   },
   resetButton: {
     width: "100%",
     backgroundColor: Colors.text.muted,
     borderRadius: 12,
-    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    marginTop: 8,
     elevation: 3,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 3,
   },
   resetButtonText: {
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
     color: "white",
-    fontSize: 16,
     fontWeight: "600",
   },
 });

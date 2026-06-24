@@ -1,19 +1,25 @@
+// app/index.tsx
 import { Text } from "@/components/Themed";
 import Button from "@/components/ui/Button";
+import ScreenWrapper from "@/components/ui/ScreenWrapper";
 import Colors from "@/constants/Colors";
+import { useResponsive } from "@/theme/responsive";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const numberRegex = RegExp("^[0-9]+$");
 
 const StartScreen = () => {
+  const { fontSize, spacing, bp } = useResponsive();
   const router = useRouter();
   const [secretNumber, setSecretNumber] = useState("");
 
   const handleStartGame = () => {
+    console.log("handleStartGame fired, secretNumber:", secretNumber);
+
     if (!secretNumber || !numberRegex.test(secretNumber)) {
+      console.log("validation failed");
       Alert.alert(
         "Invalid Number",
         "Please enter a valid number between 0 and 99",
@@ -23,24 +29,44 @@ const StartScreen = () => {
 
     const num = parseInt(secretNumber);
     if (num < 0 || num > 99) {
+      console.log("range failed");
       Alert.alert("Invalid Number", "Number must be between 0 and 99");
       return;
     }
 
-    router.replace({
-      pathname: "/game",
-      params: { secretNumber: secretNumber },
-    });
+    console.log("navigating to game with:", secretNumber);
+    router.push({ pathname: "/game", params: { secretNumber } });
   };
 
+  // useEffect(() => {
+  //   console.log("GameScreen mounted, secretNumber:", secretNumber);
+
+  //   if (secretNumber === undefined) return; // still loading
+  //   if (secretNumber === null) return; // still loading
+  //   if (secretNumber === "") {
+  //     console.log("secretNumber empty, redirecting to index");
+  //     router.replace("/");
+  //   }
+  // }, [secretNumber]);
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Guess My Number</Text>
-      <Text style={styles.subtitle}>
+    <ScreenWrapper>
+      <Text style={[styles.title, { fontSize: fontSize["3xl"] }]}>
+        Guess My Number
+      </Text>
+
+      <Text style={[styles.subtitle, { fontSize: fontSize.base }]}>
         Enter a secret number between 0 and 99
       </Text>
 
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            padding: spacing[5],
+            width: bp.isLg ? "60%" : "100%",
+          },
+        ]}
+      >
         <TextInput
           value={secretNumber}
           onChangeText={(text) => {
@@ -48,7 +74,14 @@ const StartScreen = () => {
               setSecretNumber(text);
             }
           }}
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              fontSize: fontSize["4xl"],
+              height: spacing[16],
+              width: bp.isSm ? "80%" : "60%",
+            },
+          ]}
           maxLength={2}
           inputMode="numeric"
           keyboardType="number-pad"
@@ -63,28 +96,19 @@ const StartScreen = () => {
         disabled={!secretNumber}
       />
 
-      <Text style={styles.infoText}>
+      <Text style={[styles.infoText, { fontSize: fontSize.sm }]}>
         Your friend will try to guess this number
       </Text>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 24,
-    padding: 24,
-  },
   title: {
-    fontSize: 32,
     fontWeight: "bold",
     color: Colors.accent,
   },
   subtitle: {
-    fontSize: 16,
     color: Colors.text.primary,
     textAlign: "center",
   },
@@ -93,16 +117,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.primary,
     borderRadius: 10,
-    padding: 20,
     elevation: 4,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
   },
   input: {
-    height: 80,
-    fontSize: 48,
-    width: "60%",
     borderBottomColor: Colors.accent,
     color: Colors.accent,
     borderBottomWidth: 3,
@@ -112,7 +132,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     color: Colors.text.muted,
-    fontSize: 14,
     textAlign: "center",
     fontStyle: "italic",
   },
