@@ -5,7 +5,7 @@ import ScreenWrapper from "@/components/ui/ScreenWrapper";
 import Colors from "@/constants/Colors";
 import { useResponsive } from "@/theme/responsive";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
 
 const numberRegex = RegExp("^[0-9]+$");
@@ -50,7 +50,12 @@ const StartScreen = () => {
   // }, [secretNumber]);
   return (
     <ScreenWrapper>
-      <Text style={[styles.title, { fontSize: fontSize["3xl"] }]}>
+      <Text
+        style={[
+          styles.title,
+          { fontSize: fontSize["3xl"], textAlign: "center" },
+        ]}
+      >
         Guess My Number
       </Text>
 
